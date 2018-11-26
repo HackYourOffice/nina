@@ -1,10 +1,7 @@
 package de.dm.planlos;
 
-import android.util.Log;
 import org.altbeacon.beacon.Beacon;
 import org.altbeacon.beacon.Identifier;
-
-import static de.dm.planlos.Nina.LOG_TAG;
 
 public class DmBeacon {
     public final int id;
@@ -47,7 +44,6 @@ public class DmBeacon {
     }
 
     public static boolean isDmBeacon(Beacon beacon) {
-        Log.i(LOG_TAG, "IDEN: " + getBeaconId(beacon));
         return Nina.DM_BEACON_ID.equals(getBeaconId(beacon).toString());
     }
 

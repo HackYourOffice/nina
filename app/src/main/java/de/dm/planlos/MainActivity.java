@@ -1,6 +1,9 @@
 package de.dm.planlos;
 
 import android.Manifest;
+import android.app.Notification;
+import android.app.PendingIntent;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
@@ -8,6 +11,7 @@ import android.os.RemoteException;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.widget.TextView;
 import org.altbeacon.beacon.Beacon;
 import org.altbeacon.beacon.BeaconConsumer;
 import org.altbeacon.beacon.BeaconManager;
@@ -47,9 +51,23 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
         Log.i(LOG_TAG, "getting beacon manager");
         BeaconManager.setRssiFilterImplClass(ArmaRssiFilter.class);
         beaconManager = BeaconManager.getInstanceForApplication(this);
+        //initBackgroundGedöns();
         beaconManager.bind(this);
 
         Communicator.getExistingBeacons();
+    }
+
+    private void initBackgroundGedöns() {
+        Notification.Builder builder = new Notification.Builder(this, "NINa");
+        builder.setSmallIcon(R.mipmap.ic_launcher);
+        builder.setContentTitle("Scanning for Beacons");
+        Intent intent = new Intent(this, MonitoringActivity.class);
+        PendingIntent pendingIntent = PendingIntent.getActivity(
+                this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT
+        );
+        builder.setContentIntent(pendingIntent);
+        beaconManager.enableForegroundServiceScanning(builder.build(), 456);
+        beaconManager.setEnableScheduledScanJobs(false);
     }
 
     @Override
@@ -108,39 +126,41 @@ public class MainActivity extends AppCompatActivity implements BeaconConsumer {
     }
 
     private void handleClosestBeacon(DmBeacon closestBeacon) {
-        Log.i(LOG_TAG, "-----------------------------------------------");
-        Log.i(LOG_TAG, String.format("Closest beacon: " + closestBeacon.id));
-        Log.i(LOG_TAG, "-----------------------------------------------");
+        if (Nina.LOG_BEACONS) {
+            Log.i(LOG_TAG, "-----------------------------------------------");
+            Log.i(LOG_TAG, String.format("Closest beacon: " + closestBeacon.id));
+            Log.i(LOG_TAG, "-----------------------------------------------");
+        }
+        TextView textView = findViewById(R.id.message);
+        String beaconName = Integer.toString(closestBeacon.id);
+        if (Nina.BEACONS.containsKey(closestBeacon.id)) {
+            beaconName = Nina.BEACONS.get(closestBeacon.id);
+        }
+        textView.setText(String.format("Closest beacon: %s\nDistance: %s\n\n", beaconName, closestBeacon.distance) + Nina.getAllBeaconsString());
         Communicator.publishPosition(closestBeacon);
     }
 
     private static void logBeaconInfos(Collection<Beacon> beacons) {
-    /*
-        I/NINa: I see 0 dead people and 1 beacon(s)
-        I/NINa: ADD: 56:2E:4F:12:D5:56, NAME null, DISTANCE 1.704912567447212, TX: -69, Id1: aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa
-        I/NINa: Identifier: aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa
-                Identifier: 1
-                Identifier: 0
-                Data: 0
-     */
-        Log.i(LOG_TAG, String.format("I see 0 dead people and %s beacon(s)", beacons.size()));
-        beacons.forEach(beacon -> {
-            Log.i(LOG_TAG, String.format("ADD: %s, NAME %s, DISTANCE %s, TX: %s, Id1: %s",
-                    beacon.getBluetoothAddress(),
-                    beacon.getBluetoothName(),
-                    beacon.getDistance(),
-                    beacon.getTxPower(),
-                    beacon.getId1().toString()
-            ));
-            beacon.getIdentifiers().forEach(ident -> {
-                Log.i(LOG_TAG, "Identifier: " + ident.toString());
+        if (Nina.LOG_BEACONS) {
+            Log.i(LOG_TAG, String.format("I see 0 dead people and %s beacon(s)", beacons.size()));
+            beacons.forEach(beacon -> {
+                Log.i(LOG_TAG, String.format("ADD: %s, NAME %s, DISTANCE %s, TX: %s, Id1: %s",
+                        beacon.getBluetoothAddress(),
+                        beacon.getBluetoothName(),
+                        beacon.getDistance(),
+                        beacon.getTxPower(),
+                        beacon.getId1().toString()
+                ));
+                beacon.getIdentifiers().forEach(ident -> {
+                    Log.i(LOG_TAG, "Identifier: " + ident.toString());
+                });
+                beacon.getDataFields().forEach(df -> {
+                    Log.i(LOG_TAG, "Data: " + df.toString());
+                });
+                beacon.getExtraDataFields().forEach(df -> {
+                    Log.i(LOG_TAG, "AddData: " + df.toString());
+                });
             });
-            beacon.getDataFields().forEach(df -> {
-                Log.i(LOG_TAG, "Data: " + df.toString());
-            });
-            beacon.getExtraDataFields().forEach(df -> {
-                Log.i(LOG_TAG, "AddData: " + df.toString());
-            });
-        });
+        }
     }
 }

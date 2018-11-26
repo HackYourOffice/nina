@@ -18,7 +18,7 @@ public class FoundBeacons {
             try {
                 dmBeacons.add(new DmBeacon(beacon));
             } catch (DmBeacon.InvalidBeaconException e) {
-                Log.w(LOG_TAG, String.format("Did not add beacon to found beacons: %s", e.getMessage()));
+                Log.w(LOG_TAG, String.format("Did not add beacon to found BEACONS: %s", e.getMessage()));
             }
         });
         dmBeacons.sort(Comparator.comparingDouble(beacon -> beacon.distance));
